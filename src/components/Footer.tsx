@@ -7,7 +7,7 @@ export default function Footer() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
         <div>
           <p className="font-serif font-bold text-slate-800 text-base">JWDR Blog</p>
-          <p className="text-xs text-stone-500 mt-1">A quiet, deliberate corner for essays, reflections, and writings.</p>
+          <p className="text-xs text-stone-500 mt-1">A quiet, deliberate corner for reflections, and writings.</p>
         </div>
 
         <div className="flex items-center gap-6 text-xs text-stone-500">

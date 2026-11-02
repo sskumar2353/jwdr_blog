@@ -14,19 +14,19 @@ export default function HomePage() {
       {/* Editorial Header / Intro */}
       <section className="py-12 border-b border-stone-200/80">
         <div className="max-w-3xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200/60 text-xs font-semibold text-blue-700 mb-6">
+          {/* <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200/60 text-xs font-semibold text-blue-700 mb-6">
             <Sparkles className="w-3.5 h-3.5" />
             <span>Welcome to my writing space</span>
-          </div>
+          </div> */}
           <h1 className="text-4xl sm:text-5xl font-serif font-black tracking-tight text-slate-950 leading-[1.15]">
             {settings.siteTitle}
           </h1>
           <p className="mt-4 text-xl font-serif text-stone-600 leading-relaxed">
             {settings.tagline}
           </p>
-          <p className="mt-4 text-base text-stone-600 leading-relaxed font-sans max-w-2xl">
+          {/* <p className="mt-4 text-base text-stone-600 leading-relaxed font-sans max-w-2xl">
             {settings.authorBio}
-          </p>
+          </p> */}
         </div>
       </section>
 
@@ -35,14 +35,14 @@ export default function HomePage() {
         <div className="flex items-center justify-between pb-4 border-b border-stone-200">
           <div>
             <h2 className="text-2xl font-serif font-bold text-slate-900">
-              Master Index of Writings
+              Recent Posts
             </h2>
-            <p className="text-sm text-stone-500 mt-1">
+            {/* <p className="text-sm text-stone-500 mt-1">
               Browse essays, articles, and long-form writings.
-            </p>
+            </p> */}
           </div>
           <span className="text-xs font-mono font-semibold px-2.5 py-1 rounded bg-stone-200/70 text-stone-700">
-            {posts.length} {posts.length === 1 ? 'Essay' : 'Essays'}
+            {posts.length} {posts.length === 1 ? 'Post' : 'Posts'}
           </span>
         </div>
 
@@ -139,7 +139,7 @@ export default function HomePage() {
                     </div>
 
                     <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 group-hover:bg-blue-600 text-white text-xs font-semibold shadow-sm transition-all duration-200">
-                      <span>Read Essay</span>
+                      <span>Read Blog</span>
                       <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                     </div>
                   </div>

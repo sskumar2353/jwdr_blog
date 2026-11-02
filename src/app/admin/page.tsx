@@ -28,11 +28,11 @@ export default function AdminDashboardPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-stone-200">
         <div>
           <h1 className="text-3xl font-serif font-black text-slate-900">
-            Author Workspace
+            My Workspace
           </h1>
-          <p className="text-sm text-stone-500 mt-1">
+          {/* <p className="text-sm text-stone-500 mt-1">
             Manage your essays, write new content, and check reader inquiries.
-          </p>
+          </p> */}
         </div>
 
         <div className="flex items-center gap-3">

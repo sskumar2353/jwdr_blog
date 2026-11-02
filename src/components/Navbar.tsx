@@ -46,7 +46,7 @@ export default function Navbar() {
               <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
               <ShieldCheck className="w-4 h-4 text-emerald-400" />
               <span className="font-serif font-bold text-sm tracking-wide text-white group-hover:text-emerald-300 transition-colors">
-                Author Workspace
+                My Workspace
               </span>
             </Link>
           </div>
@@ -112,9 +112,9 @@ export default function Navbar() {
             <span className="text-2xl font-serif font-black tracking-tight text-slate-900 group-hover:text-blue-600 transition-colors">
               {siteTitle}
             </span>
-            <span className="text-xs uppercase tracking-widest text-stone-500 font-sans font-semibold">
+            {/* <span className="text-xs uppercase tracking-widest text-stone-500 font-sans font-semibold">
               Writings & Reflections
-            </span>
+            </span> */}
           </Link>
         </div>
 

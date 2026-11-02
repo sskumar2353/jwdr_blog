@@ -66,19 +66,20 @@ export default function ArticleReaderView({ post, settings, formattedDate }: Pro
 
   return (
     <div className={`transition-all duration-300 ${isFitToScreen ? 'max-w-none px-3 sm:px-10 w-full' : 'max-w-5xl mx-auto'}`}>
-      {/* Top Navigation & Fit to Screen Controls */}
-      <div className="flex items-center justify-between pb-6 mb-8 border-b border-stone-200">
+      {/* Sticky Reader Bar (Stays on screen as you scroll down for effortless Back navigation) */}
+      <div className="sticky top-20 z-30 bg-stone-50/95 backdrop-blur-md py-3 mb-8 border-b border-stone-200/80 transition-all flex items-center justify-between shadow-sm">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-sm font-semibold text-stone-600 hover:text-slate-900 transition-colors"
+          className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white hover:bg-stone-100 border border-stone-300/80 text-xs sm:text-sm font-semibold text-stone-700 hover:text-slate-950 shadow-sm transition-all hover:-translate-x-0.5"
+          title="Back to Master Index"
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="w-4 h-4 text-blue-600" />
           <span>Back to Master Index</span>
         </Link>
 
-        {/* Top Actions: TOC Button with Hover Tooltip & Fit to Screen Pill */}
-        <div className="flex items-center gap-3">
-          {post.tableOfContents && post.tableOfContents.length > 0 && (
+        {/* Action Controls: TOC appears ONLY in Fit to Screen mode */}
+        <div className="flex items-center gap-2.5">
+          {isFitToScreen && post.tableOfContents && post.tableOfContents.length > 0 && (
             <div className="relative group">
               <button
                 type="button"
@@ -86,18 +87,18 @@ export default function ArticleReaderView({ post, settings, formattedDate }: Pro
                 className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all shadow-sm ${
                   showTOCDrawer
                     ? 'bg-blue-600 text-white shadow-blue-200'
-                    : 'bg-stone-100 hover:bg-stone-200 text-stone-700 hover:text-blue-700 border border-stone-300/80 hover:border-blue-400'
+                    : 'bg-white hover:bg-stone-100 text-stone-700 hover:text-blue-700 border border-stone-300/80 hover:border-blue-400'
                 }`}
                 aria-label="Table of Contents"
               >
                 <ListFilter className="w-3.5 h-3.5 text-blue-600 transition-transform group-hover:scale-110" />
                 <span>TOC</span>
-                <span className="text-[10px] px-1.5 py-0.5 bg-stone-200 group-hover:bg-blue-100 group-hover:text-blue-800 rounded-full font-mono">
+                <span className="text-[10px] px-1.5 py-0.5 bg-stone-100 group-hover:bg-blue-100 group-hover:text-blue-800 rounded-full font-mono">
                   {post.tableOfContents.length}
                 </span>
               </button>
 
-              {/* Beautiful Hover Tooltip */}
+              {/* Styled Hover Tooltip */}
               <div className="absolute right-0 sm:left-1/2 sm:-translate-x-1/2 -bottom-10 px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-medium tracking-wide shadow-xl whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 ease-out transform group-hover:translate-y-0.5 z-50">
                 Table of Contents
                 <div className="absolute right-4 sm:left-1/2 sm:-translate-x-1/2 bottom-full w-0 h-0 border-x-4 border-x-transparent border-b-4 border-b-slate-900" />
@@ -105,6 +106,7 @@ export default function ArticleReaderView({ post, settings, formattedDate }: Pro
             </div>
           )}
 
+          {/* Fit to Screen Pill */}
           <button
             type="button"
             onClick={toggleFitToScreen}
@@ -130,9 +132,9 @@ export default function ArticleReaderView({ post, settings, formattedDate }: Pro
         </div>
       </div>
 
-      {/* Slide-over TOC Drawer (Opens smoothly from top bar button, no floating screen clutter) */}
-      {showTOCDrawer && post.tableOfContents && post.tableOfContents.length > 0 && (
-        <div className="fixed right-6 top-24 z-50 w-80 sm:w-96 shadow-2xl rounded-2xl bg-white border border-stone-300 p-5 max-h-[75vh] flex flex-col animate-in fade-in slide-in-from-top-2 duration-200">
+      {/* Slide-over TOC Drawer (for Fit to Screen mode) */}
+      {showTOCDrawer && isFitToScreen && post.tableOfContents && post.tableOfContents.length > 0 && (
+        <div className="fixed right-6 top-32 z-50 w-80 sm:w-96 shadow-2xl rounded-2xl bg-white border border-stone-300 p-5 max-h-[75vh] flex flex-col animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="flex items-center justify-between pb-3 mb-3 border-b border-stone-200 shrink-0">
             <span className="font-bold text-xs uppercase tracking-wider text-stone-700 flex items-center gap-1.5">
               <ListFilter className="w-3.5 h-3.5 text-blue-600" />
@@ -218,9 +220,9 @@ export default function ArticleReaderView({ post, settings, formattedDate }: Pro
           </div>
         </div>
 
-        {/* Sticky Table of Contents Sidebar (Normal Mode) */}
+        {/* Clean Sticky Table of Contents Sidebar (Normal Mode - zero overlapping elements) */}
         {!isFitToScreen && (
-          <aside className="lg:col-span-4 lg:sticky lg:top-24 space-y-6">
+          <aside className="lg:col-span-4 lg:sticky lg:top-36 space-y-4">
             {post.tableOfContents && post.tableOfContents.length > 0 ? (
               <TableOfContents items={post.tableOfContents} />
             ) : (
@@ -228,20 +230,6 @@ export default function ArticleReaderView({ post, settings, formattedDate }: Pro
                 No sections in this article.
               </div>
             )}
-
-            {/* Quick Actions Card */}
-            <div className="p-4 rounded-xl bg-white border border-stone-200/80 shadow-sm text-xs text-stone-600 space-y-3">
-              <p className="font-semibold text-slate-900">Enjoyed this writing?</p>
-              <p className="text-stone-500">
-                Share it with someone or reach out with your thoughts through the contact page.
-              </p>
-              <Link
-                href="/contact"
-                className="block text-center py-2 px-3 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-semibold transition-colors"
-              >
-                Contact Author
-              </Link>
-            </div>
           </aside>
         )}
       </div>

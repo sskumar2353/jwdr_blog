@@ -41,7 +41,7 @@ export default function TableOfContents({ items }: Props) {
   }
 
   return (
-    <nav aria-label="Table of contents" className="sticky top-28 max-h-[calc(100vh-8rem)] overflow-y-auto p-4 rounded-xl bg-stone-100/70 border border-stone-200/80 shadow-sm">
+    <nav aria-label="Table of contents" className="max-h-[calc(100vh-10rem)] overflow-y-auto p-4 rounded-2xl bg-stone-100/90 border border-stone-200/90 shadow-sm">
       <div className="flex items-center gap-2 pb-3 mb-3 border-b border-stone-200 text-xs font-bold uppercase tracking-wider text-stone-500">
         <ListFilter className="w-3.5 h-3.5 text-blue-600" />
         <span>Table of Contents</span>
