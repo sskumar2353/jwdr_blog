@@ -8,7 +8,6 @@ import {
 } from 'lucide-react';
 import { ContactMessage } from '@/lib/storage';
 import ReplyMessageModal from '../ReplyMessageModal';
-import EmailTesterButton from '../EmailTesterButton';
 
 interface Props {
   initialMessages: ContactMessage[];
@@ -165,8 +164,6 @@ export default function MessagesArchiveClient({ initialMessages }: Props) {
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-blue-600' : ''}`} />
             <span>Refresh</span>
           </button>
-
-          <EmailTesterButton />
         </div>
       </div>
 

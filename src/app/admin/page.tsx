@@ -9,7 +9,6 @@ import {
   FileText
 } from 'lucide-react';
 import DeletePostButton from './DeletePostButton';
-import EmailTesterButton from './EmailTesterButton';
 import ReaderMessagesList from './ReaderMessagesList';
 
 export const revalidate = 0;
@@ -212,7 +211,12 @@ export default async function AdminDashboardPage() {
               Messages submitted through your public contact form.
             </p>
           </div>
-          <EmailTesterButton />
+          <Link
+            href="/admin/messages"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold transition-colors"
+          >
+            <span>Full Archive &rarr;</span>
+          </Link>
         </div>
 
         <ReaderMessagesList initialMessages={messages} />
