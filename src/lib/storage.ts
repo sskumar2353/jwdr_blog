@@ -4,7 +4,7 @@ import path from 'path';
 export interface TOCItem {
   id: string;
   title: string;
-  level: number; // 1 for H1/main, 2 for H2/sub
+  level: number; // 1 to 6 (H1 to H6)
 }
 
 export interface BlogPost {
@@ -38,7 +38,13 @@ export interface SiteSettings {
   authorName: string;
   authorBio: string;
   authorEmail: string;
-  adminPassword: string; // Stored securely
+  adminPassword: string;
+  // Email / SMTP dispatch configuration
+  smtpHost?: string;
+  smtpPort?: number;
+  smtpUser?: string;
+  smtpPass?: string;
+  smtpSecure?: boolean;
 }
 
 function getDataDir(): string {
@@ -62,96 +68,40 @@ function ensureDataDir() {
   }
 }
 
-// Default initial settings
+// In-memory cache for ultra-fast response
+let _postsCache: BlogPost[] | null = null;
+let _settingsCache: SiteSettings | null = null;
+let _messagesCache: ContactMessage[] | null = null;
+
 const DEFAULT_SETTINGS: SiteSettings = {
   siteTitle: 'JWDR Blog',
   tagline: 'Essays, Writings & Reflections',
   authorName: 'Joseph Anna',
   authorBio: 'Writer, thinker, and blogger. Sharing thoughts, essays, and stories on life, craft, and observations.',
   authorEmail: 'contact@jwdr.blog',
-  adminPassword: 'admin', // Can be changed in Admin -> Settings
+  adminPassword: 'admin',
+  smtpHost: '',
+  smtpPort: 587,
+  smtpUser: '',
+  smtpPass: '',
+  smtpSecure: false,
 };
 
-// Default sample welcome post
-const DEFAULT_POSTS: BlogPost[] = [
-  {
-    id: 'welcome-post',
-    title: 'Welcome to My New Blog',
-    slug: 'welcome-to-my-new-blog',
-    excerpt: 'An introduction to my new writing sanctuary, organized with a clean table of contents and focused on distraction-free reading.',
-    tableOfContents: [
-      { id: 'why-this-platform', title: 'Why I Built This Platform', level: 1 },
-      { id: 'table-of-contents-workflow', title: 'The Table of Contents Workflow', level: 1 },
-      { id: 'word-like-experience', title: 'A Word-Like Writing Experience', level: 2 },
-      { id: 'what-to-expect', title: 'What to Expect Next', level: 1 }
-    ],
-    content: `
-      <h2 id="why-this-platform">Why I Built This Platform</h2>
-      <p>Welcome! As a writer, I wanted a digital space that feels just like sitting down with a clean, blank sheet in a word processor. No cluttered sidebars, no confusing technical jargon, and no endless plugin configurations.</p>
-      
-      <p>Here, every piece of writing is structured deliberately, starting with a clear Table of Contents and followed by formatted prose, images, and tables where needed.</p>
-
-      <h2 id="table-of-contents-workflow">The Table of Contents Workflow</h2>
-      <p>Before diving into a long essay or detailed article, good structure is essential. In this platform, every article is designed around a dedicated outline:</p>
-      
-      <ul>
-        <li><strong>Outline First:</strong> The Table of Contents is explicitly planned and crafted.</li>
-        <li><strong>Seamless Navigation:</strong> Readers can jump to any section instantly by clicking on the TOC sidebar.</li>
-        <li><strong>Distraction-Free:</strong> Clean typography inspired by modern editorial publications.</li>
-      </ul>
-
-      <h3 id="word-like-experience">A Word-Like Writing Experience</h3>
-      <p>While the reader sees a polished, static-like website, the writing interface gives me complete freedom:</p>
-      
-      <table style="width: 100%; border-collapse: collapse; margin: 1.5rem 0;">
-        <thead>
-          <tr style="background-color: #f1f5f9; border-bottom: 2px solid #cbd5e1;">
-            <th style="padding: 10px; text-align: left;">Feature</th>
-            <th style="padding: 10px; text-align: left;">Writer Capability</th>
-            <th style="padding: 10px; text-align: left;">Reader Experience</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr style="border-bottom: 1px solid #e2e8f0;">
-            <td style="padding: 10px; font-weight: 600;">Table of Contents</td>
-            <td style="padding: 10px;">Custom-defined outline</td>
-            <td style="padding: 10px;">Sticky sidebar navigation</td>
-          </tr>
-          <tr style="border-bottom: 1px solid #e2e8f0;">
-            <td style="padding: 10px; font-weight: 600;">Media & Tables</td>
-            <td style="padding: 10px;">Drag-and-drop images, easy tables</td>
-            <td style="padding: 10px;">Responsive, formatted display</td>
-          </tr>
-          <tr>
-            <td style="padding: 10px; font-weight: 600;">Permissions</td>
-            <td style="padding: 10px;">Password-protected editing</td>
-            <td style="padding: 10px;">Strict read-only view</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <h2 id="what-to-expect">What to Expect Next</h2>
-      <p>I will be publishing essays, detailed reflections, and new writings here regularly. If you have thoughts, feedback, or would like to connect, please feel free to use the <em>Contact</em> link at the top or bottom of the page.</p>
-      <p>Thank you for reading!</p>
-    `,
-    published: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    readingTime: '3 min read',
-    tags: ['Introduction', 'Writing', 'Reflections']
-  }
-];
-
 export function getSettings(): SiteSettings {
+  if (_settingsCache) return _settingsCache;
   ensureDataDir();
   if (!fs.existsSync(SETTINGS_FILE)) {
     fs.writeFileSync(SETTINGS_FILE, JSON.stringify(DEFAULT_SETTINGS, null, 2), 'utf-8');
+    _settingsCache = DEFAULT_SETTINGS;
     return DEFAULT_SETTINGS;
   }
   try {
     const raw = fs.readFileSync(SETTINGS_FILE, 'utf-8');
-    return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
+    const parsed: SiteSettings = { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
+    _settingsCache = parsed;
+    return parsed;
   } catch {
+    _settingsCache = DEFAULT_SETTINGS;
     return DEFAULT_SETTINGS;
   }
 }
@@ -159,22 +109,28 @@ export function getSettings(): SiteSettings {
 export function saveSettings(settings: Partial<SiteSettings>): SiteSettings {
   ensureDataDir();
   const current = getSettings();
-  const updated = { ...current, ...settings };
+  const updated: SiteSettings = { ...current, ...settings };
+  _settingsCache = updated;
   fs.writeFileSync(SETTINGS_FILE, JSON.stringify(updated, null, 2), 'utf-8');
   return updated;
 }
 
 export function getAllPosts(includeUnpublished = false): BlogPost[] {
+  if (_postsCache) {
+    if (includeUnpublished) return _postsCache;
+    return _postsCache.filter(p => p.published);
+  }
+
   ensureDataDir();
   if (!fs.existsSync(POSTS_FILE)) {
-    fs.writeFileSync(POSTS_FILE, JSON.stringify(DEFAULT_POSTS, null, 2), 'utf-8');
-    return DEFAULT_POSTS;
+    return [];
   }
   try {
     const raw = fs.readFileSync(POSTS_FILE, 'utf-8');
-    const posts: BlogPost[] = JSON.parse(raw);
-    if (includeUnpublished) return posts;
-    return posts.filter(p => p.published);
+    const parsed: BlogPost[] = JSON.parse(raw);
+    _postsCache = parsed;
+    if (includeUnpublished) return parsed;
+    return parsed.filter(p => p.published);
   } catch {
     return [];
   }
@@ -222,6 +178,7 @@ export function savePost(post: Partial<BlogPost> & { title: string }): BlogPost 
         updatedAt: now,
       };
       posts[index] = updated;
+      _postsCache = posts;
       fs.writeFileSync(POSTS_FILE, JSON.stringify(posts, null, 2), 'utf-8');
       return updated;
     }
@@ -229,7 +186,6 @@ export function savePost(post: Partial<BlogPost> & { title: string }): BlogPost 
 
   // Create new
   const newId = 'post_' + Date.now();
-  // Ensure unique slug
   let uniqueSlug = slugBase;
   let counter = 1;
   while (posts.some(p => p.slug === uniqueSlug && p.id !== newId)) {
@@ -252,6 +208,7 @@ export function savePost(post: Partial<BlogPost> & { title: string }): BlogPost 
   };
 
   posts.unshift(newPost);
+  _postsCache = posts;
   fs.writeFileSync(POSTS_FILE, JSON.stringify(posts, null, 2), 'utf-8');
   return newPost;
 }
@@ -261,6 +218,7 @@ export function deletePost(id: string): boolean {
   const posts = getAllPosts(true);
   const filtered = posts.filter(p => p.id !== id);
   if (filtered.length !== posts.length) {
+    _postsCache = filtered;
     fs.writeFileSync(POSTS_FILE, JSON.stringify(filtered, null, 2), 'utf-8');
     return true;
   }
@@ -268,13 +226,16 @@ export function deletePost(id: string): boolean {
 }
 
 export function getAllMessages(): ContactMessage[] {
+  if (_messagesCache) return _messagesCache;
   ensureDataDir();
   if (!fs.existsSync(MESSAGES_FILE)) {
     return [];
   }
   try {
     const raw = fs.readFileSync(MESSAGES_FILE, 'utf-8');
-    return JSON.parse(raw);
+    const parsed: ContactMessage[] = JSON.parse(raw);
+    _messagesCache = parsed;
+    return parsed;
   } catch {
     return [];
   }
@@ -293,6 +254,7 @@ export function saveContactMessage(msg: { name: string; email: string; subject: 
     read: false,
   };
   messages.unshift(newMsg);
+  _messagesCache = messages;
   fs.writeFileSync(MESSAGES_FILE, JSON.stringify(messages, null, 2), 'utf-8');
   return newMsg;
 }
@@ -303,6 +265,7 @@ export function markMessageRead(id: string): boolean {
   const target = messages.find(m => m.id === id);
   if (target) {
     target.read = true;
+    _messagesCache = messages;
     fs.writeFileSync(MESSAGES_FILE, JSON.stringify(messages, null, 2), 'utf-8');
     return true;
   }

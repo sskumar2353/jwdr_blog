@@ -1,12 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save, CheckCircle2, Shield, Settings as SettingsIcon } from 'lucide-react';
+import { ArrowLeft, Save, CheckCircle2, Shield, Settings as SettingsIcon, Mail } from 'lucide-react';
 
 export default function AdminSettingsPage() {
-  const router = useRouter();
   const [formData, setFormData] = useState({
     siteTitle: '',
     tagline: '',
@@ -14,6 +12,11 @@ export default function AdminSettingsPage() {
     authorBio: '',
     authorEmail: '',
     adminPassword: '',
+    smtpHost: '',
+    smtpPort: 587,
+    smtpUser: '',
+    smtpPass: '',
+    smtpSecure: false,
   });
 
   const [loading, setLoading] = useState(true);
@@ -26,7 +29,11 @@ export default function AdminSettingsPage() {
       .then((res) => res.json())
       .then((data) => {
         if (data.success && data.settings) {
-          setFormData(data.settings);
+          setFormData({
+            ...data.settings,
+            smtpPort: data.settings.smtpPort || 587,
+            smtpSecure: data.settings.smtpSecure || false,
+          });
         }
       })
       .catch(() => setError('Failed to load settings'))
@@ -82,7 +89,7 @@ export default function AdminSettingsPage() {
           <span>Site & Author Settings</span>
         </h1>
         <p className="text-xs text-stone-500">
-          Customize your blog identity, author profile, and admin security password.
+          Customize your blog identity, author profile, email delivery, and admin security password.
         </p>
       </header>
 
@@ -100,6 +107,7 @@ export default function AdminSettingsPage() {
       )}
 
       <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-stone-200/90 p-8 shadow-sm space-y-6">
+        {/* Blog Identity */}
         <div className="space-y-4">
           <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 border-b pb-2">
             Blog Identity
@@ -131,6 +139,7 @@ export default function AdminSettingsPage() {
           </div>
         </div>
 
+        {/* Author Profile */}
         <div className="space-y-4 pt-4 border-t border-stone-100">
           <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 border-b pb-2">
             Author Profile
@@ -177,6 +186,74 @@ export default function AdminSettingsPage() {
           </div>
         </div>
 
+        {/* Email Notification Dispatch (SMTP) */}
+        <div className="space-y-4 pt-4 border-t border-stone-100">
+          <div className="flex items-center gap-2 border-b pb-2">
+            <Mail className="w-4 h-4 text-blue-600" />
+            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900">
+              Email Dispatch Configuration (Optional)
+            </h2>
+          </div>
+          <p className="text-xs text-stone-500">
+            Configure SMTP to receive contact form submissions straight to your email. (Messages are also automatically stored in your dashboard).
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-stone-600">
+                SMTP Host
+              </label>
+              <input
+                type="text"
+                placeholder="smtp.gmail.com or mail.yourdomain.com"
+                value={formData.smtpHost || ''}
+                onChange={(e) => setFormData({ ...formData, smtpHost: e.target.value })}
+                className="w-full text-sm border border-stone-300 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-stone-600">
+                SMTP Port
+              </label>
+              <input
+                type="number"
+                placeholder="587"
+                value={formData.smtpPort || 587}
+                onChange={(e) => setFormData({ ...formData, smtpPort: Number(e.target.value) })}
+                className="w-full text-sm border border-stone-300 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-stone-600">
+                SMTP Username / Email
+              </label>
+              <input
+                type="text"
+                placeholder="your-email@gmail.com"
+                value={formData.smtpUser || ''}
+                onChange={(e) => setFormData({ ...formData, smtpUser: e.target.value })}
+                className="w-full text-sm border border-stone-300 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-stone-600">
+                SMTP Password / App Password
+              </label>
+              <input
+                type="password"
+                placeholder="App password or mail password"
+                value={formData.smtpPass || ''}
+                onChange={(e) => setFormData({ ...formData, smtpPass: e.target.value })}
+                className="w-full text-sm border border-stone-300 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Admin Password */}
         <div className="space-y-4 pt-4 border-t border-stone-100">
           <div className="flex items-center gap-2 border-b pb-2">
             <Shield className="w-4 h-4 text-emerald-600" />
@@ -196,9 +273,6 @@ export default function AdminSettingsPage() {
               onChange={(e) => setFormData({ ...formData, adminPassword: e.target.value })}
               className="w-full text-sm font-mono border border-stone-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            <p className="text-[11px] text-stone-400">
-              Use this password whenever logging in to your author portal at <code className="bg-stone-100 px-1 py-0.5 rounded">/admin/login</code>.
-            </p>
           </div>
         </div>
 

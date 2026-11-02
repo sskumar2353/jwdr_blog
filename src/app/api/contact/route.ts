@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { saveContactMessage, getAllMessages, markMessageRead, getSettings } from '@/lib/storage';
 import { isAuthenticated } from '@/lib/auth';
+import nodemailer from 'nodemailer';
 
 export async function POST(request: Request) {
   try {
@@ -13,12 +14,48 @@ export async function POST(request: Request) {
     const saved = saveContactMessage({ name, email, subject, message });
     const settings = getSettings();
 
-    // If environment has a webhook/email endpoint (e.g., Formspree, Resend, or SMTP), dispatch here
-    // For now, it is stored in the database and accessible via the author's admin panel
+    // Send email dispatch if SMTP is configured
+    let emailSent = false;
+    if (settings.smtpHost && settings.smtpUser && settings.smtpPass) {
+      try {
+        const transporter = nodemailer.createTransport({
+          host: settings.smtpHost,
+          port: settings.smtpPort || 587,
+          secure: settings.smtpSecure || false,
+          auth: {
+            user: settings.smtpUser,
+            pass: settings.smtpPass,
+          },
+        });
+
+        await transporter.sendMail({
+          from: `"${name} (via Blog)" <${settings.smtpUser}>`,
+          to: settings.authorEmail || settings.smtpUser,
+          replyTo: email,
+          subject: `[Blog Inquiry] ${subject || 'New Message'} from ${name}`,
+          text: `You received a new message on your blog:\n\nFrom: ${name} (${email})\nSubject: ${subject}\n\nMessage:\n${message}\n\n---\nView all messages in your Author Portal: http://localhost:3000/admin`,
+          html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; rounded: 12px;">
+              <h2 style="color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">New Message on ${settings.siteTitle}</h2>
+              <p><strong>From:</strong> ${name} &lt;<a href="mailto:${email}">${email}</a>&gt;</p>
+              <p><strong>Subject:</strong> ${subject || 'No Subject'}</p>
+              <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px solid #e2e8f0;">
+                <p style="white-space: pre-wrap; margin: 0; color: #1e293b;">${message}</p>
+              </div>
+              <p style="font-size: 12px; color: #64748b;">You can reply directly to this email to contact ${name}.</p>
+            </div>
+          `,
+        });
+        emailSent = true;
+      } catch (mailErr: any) {
+        console.error('SMTP delivery error (message still preserved in dashboard):', mailErr?.message);
+      }
+    }
 
     return NextResponse.json({
       success: true,
       message: `Thank you, ${name}! Your message has been sent to ${settings.authorName}.`,
+      emailSent,
       data: saved
     });
   } catch (error: any) {

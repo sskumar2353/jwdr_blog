@@ -17,9 +17,9 @@ export default function NewPostPage() {
   const [tags, setTags] = useState('');
   const [published, setPublished] = useState(true);
   const [tocItems, setTocItems] = useState<TOCItem[]>([
-    { id: 'introduction', title: '1. Introduction', level: 1 },
-    { id: 'key-points', title: '2. Key Observations', level: 1 },
-    { id: 'conclusion', title: '3. Conclusion', level: 1 },
+    { id: 'introduction', title: 'Introduction', level: 2 },
+    { id: 'key-points', title: 'Key Observations', level: 2 },
+    { id: 'conclusion', title: 'Conclusion', level: 2 },
   ]);
   const [content, setContent] = useState('');
   const [saving, setSaving] = useState(false);

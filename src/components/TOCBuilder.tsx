@@ -110,8 +110,6 @@ export default function TOCBuilder({ items, onChange, onInsertIntoEditor }: Prop
               key={item.id}
               className={`flex items-center gap-2 p-2 rounded-lg border transition-all ${getIndentClass(item.level)}`}
             >
-              <span className="text-xs font-mono text-stone-400 w-6 text-center">{idx + 1}.</span>
-
               {/* Title Input */}
               <input
                 type="text"
