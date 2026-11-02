@@ -4,13 +4,9 @@ import { isAuthenticated } from '@/lib/auth';
 
 export async function GET() {
   const settings = getSettings();
-  // Never expose adminPassword to public
-  const authed = isAuthenticated();
-  if (!authed) {
-    const { adminPassword, ...publicSettings } = settings;
-    return NextResponse.json({ success: true, settings: publicSettings });
-  }
-  return NextResponse.json({ success: true, settings });
+  // Strip out sensitive backend credentials
+  const { adminPassword, smtpPass, ...safeSettings } = settings;
+  return NextResponse.json({ success: true, settings: safeSettings });
 }
 
 export async function PUT(request: Request) {
@@ -20,8 +16,11 @@ export async function PUT(request: Request) {
 
   try {
     const data = await request.json();
+    // Do not overwrite adminPassword from general settings PUT
+    delete data.adminPassword;
     const updated = saveSettings(data);
-    return NextResponse.json({ success: true, settings: updated });
+    const { adminPassword, smtpPass, ...safeUpdated } = updated;
+    return NextResponse.json({ success: true, settings: safeUpdated });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error?.message || 'Failed to update settings' }, { status: 500 });
   }

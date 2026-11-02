@@ -76,18 +76,33 @@ export default function ArticleReaderView({ post, settings, formattedDate }: Pro
           <span>Back to Master Index</span>
         </Link>
 
-        {/* Fit to Screen Pill Button (matches user uploaded reference) */}
-        <div className="flex items-center gap-2.5">
-          {post.tableOfContents && post.tableOfContents.length > 0 && isFitToScreen && (
-            <button
-              type="button"
-              onClick={() => setShowTOCDrawer(!showTOCDrawer)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-stone-200/90 hover:bg-stone-300 text-stone-800 text-xs font-semibold transition-colors shadow-sm"
-              title="Toggle Table of Contents"
-            >
-              <ListFilter className="w-3.5 h-3.5 text-blue-600" />
-              <span>Contents ({post.tableOfContents.length})</span>
-            </button>
+        {/* Top Actions: TOC Button with Hover Tooltip & Fit to Screen Pill */}
+        <div className="flex items-center gap-3">
+          {post.tableOfContents && post.tableOfContents.length > 0 && (
+            <div className="relative group">
+              <button
+                type="button"
+                onClick={() => setShowTOCDrawer(!showTOCDrawer)}
+                className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all shadow-sm ${
+                  showTOCDrawer
+                    ? 'bg-blue-600 text-white shadow-blue-200'
+                    : 'bg-stone-100 hover:bg-stone-200 text-stone-700 hover:text-blue-700 border border-stone-300/80 hover:border-blue-400'
+                }`}
+                aria-label="Table of Contents"
+              >
+                <ListFilter className="w-3.5 h-3.5 text-blue-600 transition-transform group-hover:scale-110" />
+                <span>TOC</span>
+                <span className="text-[10px] px-1.5 py-0.5 bg-stone-200 group-hover:bg-blue-100 group-hover:text-blue-800 rounded-full font-mono">
+                  {post.tableOfContents.length}
+                </span>
+              </button>
+
+              {/* Beautiful Hover Tooltip */}
+              <div className="absolute right-0 sm:left-1/2 sm:-translate-x-1/2 -bottom-10 px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-medium tracking-wide shadow-xl whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 ease-out transform group-hover:translate-y-0.5 z-50">
+                Table of Contents
+                <div className="absolute right-4 sm:left-1/2 sm:-translate-x-1/2 bottom-full w-0 h-0 border-x-4 border-x-transparent border-b-4 border-b-slate-900" />
+              </div>
+            </div>
           )}
 
           <button
@@ -96,7 +111,7 @@ export default function ArticleReaderView({ post, settings, formattedDate }: Pro
             className={`group inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all shadow-sm ${
               isFitToScreen
                 ? 'bg-slate-900 hover:bg-slate-800 text-white'
-                : 'bg-stone-200 hover:bg-stone-300/90 text-stone-800'
+                : 'bg-stone-200 hover:bg-stone-300 text-stone-800'
             }`}
             title={isFitToScreen ? 'Exit Fit to Screen' : 'Fit to Screen (Expand Canvas)'}
           >
@@ -115,37 +130,9 @@ export default function ArticleReaderView({ post, settings, formattedDate }: Pro
         </div>
       </div>
 
-      {/* Floating Action Pill for Long Scrolling Reading Experience */}
-      <div className="fixed bottom-6 right-6 z-40 flex items-center gap-2 drop-shadow-lg">
-        {post.tableOfContents && post.tableOfContents.length > 0 && (
-          <button
-            type="button"
-            onClick={() => setShowTOCDrawer(!showTOCDrawer)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white/95 backdrop-blur-sm border border-stone-300 text-stone-800 hover:text-blue-600 text-xs font-bold transition-all shadow-md hover:scale-105"
-            title="Open Table of Contents"
-          >
-            <ListFilter className="w-3.5 h-3.5 text-blue-600" />
-            <span className="hidden sm:inline">TOC</span>
-          </button>
-        )}
-
-        <button
-          type="button"
-          onClick={toggleFitToScreen}
-          className="inline-flex items-center justify-center p-2.5 rounded-full bg-stone-400 hover:bg-stone-500 text-white transition-all shadow-md hover:scale-105"
-          title={isFitToScreen ? 'Exit Fit to Screen' : 'Fit to Screen'}
-        >
-          {isFitToScreen ? (
-            <ExitFitToScreenIcon className="w-4 h-4 text-white" />
-          ) : (
-            <FitToScreenIcon className="w-4 h-4 text-white" />
-          )}
-        </button>
-      </div>
-
-      {/* Floating TOC Drawer */}
+      {/* Slide-over TOC Drawer (Opens smoothly from top bar button, no floating screen clutter) */}
       {showTOCDrawer && post.tableOfContents && post.tableOfContents.length > 0 && (
-        <div className="fixed right-6 bottom-20 z-50 w-80 sm:w-96 shadow-2xl rounded-2xl bg-white border border-stone-300 p-5 max-h-[75vh] flex flex-col animate-in fade-in slide-in-from-bottom-2 duration-200">
+        <div className="fixed right-6 top-24 z-50 w-80 sm:w-96 shadow-2xl rounded-2xl bg-white border border-stone-300 p-5 max-h-[75vh] flex flex-col animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="flex items-center justify-between pb-3 mb-3 border-b border-stone-200 shrink-0">
             <span className="font-bold text-xs uppercase tracking-wider text-stone-700 flex items-center gap-1.5">
               <ListFilter className="w-3.5 h-3.5 text-blue-600" />

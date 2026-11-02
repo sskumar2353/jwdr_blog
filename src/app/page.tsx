@@ -81,9 +81,15 @@ export default function HomePage() {
                     {post.tableOfContents && post.tableOfContents.length > 0 && (
                       <>
                         <span>&bull;</span>
-                        <span className="flex items-center gap-1.5 text-blue-600 font-semibold">
+                        <span
+                          className="relative group/toc inline-flex items-center gap-1.5 text-blue-600 font-semibold hover:text-blue-700 transition-colors"
+                        >
                           <ListTree className="w-3.5 h-3.5" />
-                          {post.tableOfContents.length} Sections in TOC
+                          <span>{post.tableOfContents.length} Sections in TOC</span>
+                          <span className="absolute left-1/2 -translate-x-1/2 -top-8 px-2.5 py-1 rounded-md bg-slate-900 text-white text-[11px] font-normal shadow-lg whitespace-nowrap opacity-0 group-hover/toc:opacity-100 pointer-events-none transition-all duration-150 z-20">
+                            Table of Contents ({post.tableOfContents.length} items)
+                            <span className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-slate-900" />
+                          </span>
                         </span>
                       </>
                     )}
