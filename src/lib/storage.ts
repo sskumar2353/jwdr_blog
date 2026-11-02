@@ -82,14 +82,14 @@ let _messagesCache: ContactMessage[] | null = null;
 const DEFAULT_SETTINGS: SiteSettings = {
   siteTitle: "JWDR's Blog",
   tagline: 'Joy in the Journey',
-  authorName: 'Joseph ',
+  authorName: 'Joseph',
   authorBio: 'Writer, thinker, and blogger. Sharing thoughts, and stories on life, craft, and observations.',
-  authorEmail: 'contact@jwdr.blog',
+  authorEmail: 'saiofficial2284@gmail.com',
   adminPassword: 'admin',
-  smtpHost: '',
+  smtpHost: 'smtp.gmail.com',
   smtpPort: 587,
-  smtpUser: '',
-  smtpPass: '',
+  smtpUser: 'saiofficial2284@gmail.com',
+  smtpPass: 'shbgtiktmfejqmlx',
   smtpSecure: false,
 };
 

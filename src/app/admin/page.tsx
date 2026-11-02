@@ -2,7 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { isAuthenticated } from '@/lib/auth';
-import { getAllPosts, getAllMessages, getSettings } from '@/lib/storage';
+import { getAllPosts, getAllMessages, getSettings, getCloudMessages } from '@/lib/storage';
 import {
   PenSquare, Plus, Trash2, Edit3, ExternalLink,
   Mail, Settings, BookOpen, Clock, Calendar, CheckCircle,
@@ -10,17 +10,28 @@ import {
 } from 'lucide-react';
 import DeletePostButton from './DeletePostButton';
 import EmailTesterButton from './EmailTesterButton';
+import ReaderMessagesList from './ReaderMessagesList';
 
 export const revalidate = 0;
 
-export default function AdminDashboardPage() {
+export default async function AdminDashboardPage() {
   const authed = isAuthenticated();
   if (!authed) {
     redirect('/admin/login');
   }
 
   const posts = getAllPosts(true); // Include drafts
-  const messages = getAllMessages();
+  const localMsgs = getAllMessages();
+  const cloudMsgs = await getCloudMessages().catch(() => null);
+
+  const messageMap = new Map();
+  for (const m of [...localMsgs, ...(cloudMsgs || [])]) {
+    if (m?.id) messageMap.set(m.id, m);
+  }
+  const messages = Array.from(messageMap.values()).sort(
+    (a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+
   const settings = getSettings();
 
   return (
@@ -185,37 +196,13 @@ export default function AdminDashboardPage() {
               <span>Reader Messages & Feedback</span>
             </h2>
             <p className="text-xs text-stone-500 mt-0.5">
-              Messages submitted through your public contact form ({messages.length} received).
+              Messages submitted through your public contact form.
             </p>
           </div>
           <EmailTesterButton />
         </div>
 
-        {messages.length === 0 ? (
-          <div className="p-10 text-center text-stone-400 text-sm">
-            No reader messages received yet.
-          </div>
-        ) : (
-          <div className="divide-y divide-stone-100">
-            {messages.map((msg) => (
-              <div key={msg.id} className="p-5 space-y-2 hover:bg-stone-50/50">
-                <div className="flex items-center justify-between text-xs text-stone-500">
-                  <div className="flex items-center gap-2 font-medium text-slate-900">
-                    <span>{msg.name}</span>
-                    <a href={`mailto:${msg.email}`} className="text-blue-600 hover:underline">
-                      &lt;{msg.email}&gt;
-                    </a>
-                  </div>
-                  <span>{new Date(msg.createdAt).toLocaleDateString()}</span>
-                </div>
-                <p className="text-xs font-bold text-stone-800">{msg.subject}</p>
-                <p className="text-xs text-stone-600 whitespace-pre-wrap leading-relaxed bg-stone-50 p-3 rounded-lg border border-stone-100">
-                  {msg.message}
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
+        <ReaderMessagesList initialMessages={messages} />
       </section>
     </div>
   );
