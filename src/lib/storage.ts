@@ -1,5 +1,7 @@
 import fs from 'fs';
 import path from 'path';
+import bundledPostsData from '../../data/posts.json';
+import bundledSettingsData from '../../data/settings.json';
 
 export interface TOCItem {
   id: string;
@@ -63,9 +65,11 @@ const MESSAGES_FILE = path.join(DATA_DIR, 'messages.json');
 const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
 
 function ensureDataDir() {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  }
+  try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+  } catch {}
 }
 
 // In-memory cache for ultra-fast response
@@ -89,29 +93,35 @@ const DEFAULT_SETTINGS: SiteSettings = {
 
 export function getSettings(): SiteSettings {
   if (_settingsCache) return _settingsCache;
-  ensureDataDir();
-  if (!fs.existsSync(SETTINGS_FILE)) {
-    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(DEFAULT_SETTINGS, null, 2), 'utf-8');
-    _settingsCache = DEFAULT_SETTINGS;
-    return DEFAULT_SETTINGS;
-  }
   try {
-    const raw = fs.readFileSync(SETTINGS_FILE, 'utf-8');
-    const parsed: SiteSettings = { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
-    _settingsCache = parsed;
-    return parsed;
-  } catch {
-    _settingsCache = DEFAULT_SETTINGS;
-    return DEFAULT_SETTINGS;
-  }
+    ensureDataDir();
+    if (fs.existsSync(SETTINGS_FILE)) {
+      const raw = fs.readFileSync(SETTINGS_FILE, 'utf-8');
+      const parsed: SiteSettings = { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
+      _settingsCache = parsed;
+      return parsed;
+    }
+  } catch {}
+
+  // Fallback to bundled data for cloud serverless environments
+  const fallback: SiteSettings = {
+    ...DEFAULT_SETTINGS,
+    ...(bundledSettingsData as unknown as SiteSettings),
+  };
+  _settingsCache = fallback;
+  return fallback;
 }
 
 export function saveSettings(settings: Partial<SiteSettings>): SiteSettings {
-  ensureDataDir();
   const current = getSettings();
   const updated: SiteSettings = { ...current, ...settings };
   _settingsCache = updated;
-  fs.writeFileSync(SETTINGS_FILE, JSON.stringify(updated, null, 2), 'utf-8');
+  try {
+    ensureDataDir();
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(updated, null, 2), 'utf-8');
+  } catch (err) {
+    console.warn('Filesystem write notice (settings):', err);
+  }
   return updated;
 }
 
@@ -121,19 +131,22 @@ export function getAllPosts(includeUnpublished = false): BlogPost[] {
     return _postsCache.filter(p => p.published);
   }
 
-  ensureDataDir();
-  if (!fs.existsSync(POSTS_FILE)) {
-    return [];
-  }
   try {
-    const raw = fs.readFileSync(POSTS_FILE, 'utf-8');
-    const parsed: BlogPost[] = JSON.parse(raw);
-    _postsCache = parsed;
-    if (includeUnpublished) return parsed;
-    return parsed.filter(p => p.published);
-  } catch {
-    return [];
-  }
+    ensureDataDir();
+    if (fs.existsSync(POSTS_FILE)) {
+      const raw = fs.readFileSync(POSTS_FILE, 'utf-8');
+      const parsed: BlogPost[] = JSON.parse(raw);
+      _postsCache = parsed;
+      if (includeUnpublished) return parsed;
+      return parsed.filter(p => p.published);
+    }
+  } catch {}
+
+  // Bundled fallback ensures posts load seamlessly on Vercel
+  const fallback = bundledPostsData as unknown as BlogPost[];
+  _postsCache = fallback;
+  if (includeUnpublished) return fallback;
+  return fallback.filter(p => p.published);
 }
 
 export function getPostBySlug(slug: string, includeUnpublished = false): BlogPost | null {
@@ -149,7 +162,6 @@ export function getPostById(id: string): BlogPost | null {
 }
 
 export function savePost(post: Partial<BlogPost> & { title: string }): BlogPost {
-  ensureDataDir();
   const posts = getAllPosts(true);
   const now = new Date().toISOString();
 
@@ -179,7 +191,12 @@ export function savePost(post: Partial<BlogPost> & { title: string }): BlogPost 
       };
       posts[index] = updated;
       _postsCache = posts;
-      fs.writeFileSync(POSTS_FILE, JSON.stringify(posts, null, 2), 'utf-8');
+      try {
+        ensureDataDir();
+        fs.writeFileSync(POSTS_FILE, JSON.stringify(posts, null, 2), 'utf-8');
+      } catch (err) {
+        console.warn('Filesystem write notice (post update):', err);
+      }
       return updated;
     }
   }
@@ -209,17 +226,26 @@ export function savePost(post: Partial<BlogPost> & { title: string }): BlogPost 
 
   posts.unshift(newPost);
   _postsCache = posts;
-  fs.writeFileSync(POSTS_FILE, JSON.stringify(posts, null, 2), 'utf-8');
+  try {
+    ensureDataDir();
+    fs.writeFileSync(POSTS_FILE, JSON.stringify(posts, null, 2), 'utf-8');
+  } catch (err) {
+    console.warn('Filesystem write notice (new post):', err);
+  }
   return newPost;
 }
 
 export function deletePost(id: string): boolean {
-  ensureDataDir();
   const posts = getAllPosts(true);
   const filtered = posts.filter(p => p.id !== id);
   if (filtered.length !== posts.length) {
     _postsCache = filtered;
-    fs.writeFileSync(POSTS_FILE, JSON.stringify(filtered, null, 2), 'utf-8');
+    try {
+      ensureDataDir();
+      fs.writeFileSync(POSTS_FILE, JSON.stringify(filtered, null, 2), 'utf-8');
+    } catch (err) {
+      console.warn('Filesystem write notice (delete post):', err);
+    }
     return true;
   }
   return false;
@@ -227,22 +253,19 @@ export function deletePost(id: string): boolean {
 
 export function getAllMessages(): ContactMessage[] {
   if (_messagesCache) return _messagesCache;
-  ensureDataDir();
-  if (!fs.existsSync(MESSAGES_FILE)) {
-    return [];
-  }
   try {
-    const raw = fs.readFileSync(MESSAGES_FILE, 'utf-8');
-    const parsed: ContactMessage[] = JSON.parse(raw);
-    _messagesCache = parsed;
-    return parsed;
-  } catch {
-    return [];
-  }
+    ensureDataDir();
+    if (fs.existsSync(MESSAGES_FILE)) {
+      const raw = fs.readFileSync(MESSAGES_FILE, 'utf-8');
+      const parsed: ContactMessage[] = JSON.parse(raw);
+      _messagesCache = parsed;
+      return parsed;
+    }
+  } catch {}
+  return [];
 }
 
 export function saveContactMessage(msg: { name: string; email: string; subject: string; message: string }): ContactMessage {
-  ensureDataDir();
   const messages = getAllMessages();
   const newMsg: ContactMessage = {
     id: 'msg_' + Date.now(),
@@ -255,18 +278,27 @@ export function saveContactMessage(msg: { name: string; email: string; subject: 
   };
   messages.unshift(newMsg);
   _messagesCache = messages;
-  fs.writeFileSync(MESSAGES_FILE, JSON.stringify(messages, null, 2), 'utf-8');
+  try {
+    ensureDataDir();
+    fs.writeFileSync(MESSAGES_FILE, JSON.stringify(messages, null, 2), 'utf-8');
+  } catch (err) {
+    console.warn('Filesystem write notice (contact message):', err);
+  }
   return newMsg;
 }
 
 export function markMessageRead(id: string): boolean {
-  ensureDataDir();
   const messages = getAllMessages();
   const target = messages.find(m => m.id === id);
   if (target) {
     target.read = true;
     _messagesCache = messages;
-    fs.writeFileSync(MESSAGES_FILE, JSON.stringify(messages, null, 2), 'utf-8');
+    try {
+      ensureDataDir();
+      fs.writeFileSync(MESSAGES_FILE, JSON.stringify(messages, null, 2), 'utf-8');
+    } catch (err) {
+      console.warn('Filesystem write notice (mark read):', err);
+    }
     return true;
   }
   return false;
