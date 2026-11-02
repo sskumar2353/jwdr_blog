@@ -21,11 +21,20 @@
 .prose-editorial h1,
 .prose-editorial h2,
 .prose-editorial h3,
-.prose-editorial h4 {
+.prose-editorial h4,
+.prose-editorial h5,
+.prose-editorial h6 {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-weight: 700;
   color: #0f172a;
   scroll-margin-top: 5rem;
+}
+
+.prose-editorial h1 {
+  font-size: 2.25rem;
+  margin-top: 2.75rem;
+  margin-bottom: 1.25rem;
+  line-height: 1.25;
 }
 
 .prose-editorial h2 {
@@ -37,9 +46,43 @@
 }
 
 .prose-editorial h3 {
-  font-size: 1.35rem;
+  font-size: 1.4rem;
   margin-top: 2rem;
   margin-bottom: 0.75rem;
+}
+
+.prose-editorial h4 {
+  font-size: 1.2rem;
+  margin-top: 1.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.prose-editorial h5 {
+  font-size: 1.05rem;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.prose-editorial h6 {
+  font-size: 0.95rem;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+}
+
+.prose-editorial a,
+.tiptap a {
+  color: #2563eb;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.15s ease;
+}
+
+.prose-editorial a:hover,
+.tiptap a:hover {
+  color: #1d4ed8;
 }
 
 .prose-editorial p {

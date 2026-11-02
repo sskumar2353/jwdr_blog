@@ -48,7 +48,8 @@ export default function EditPostPage({ params }: { params: { id: string } }) {
     if (!editorRef.current) return;
     let generatedHtml = '';
     items.forEach((item) => {
-      const tag = item.level === 2 ? 'h3' : 'h2';
+      const level = Math.min(Math.max(item.level || 2, 1), 6);
+      const tag = `h${level}`;
       generatedHtml += `<${tag} id="${item.id}">${item.title}</${tag}><p>Write your matter here...</p>`;
     });
     editorRef.current.commands.setContent(generatedHtml);

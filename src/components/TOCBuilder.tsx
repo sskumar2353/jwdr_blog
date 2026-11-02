@@ -12,7 +12,7 @@ interface Props {
 
 export default function TOCBuilder({ items, onChange, onInsertIntoEditor }: Props) {
   const [newTitle, setNewTitle] = useState('');
-  const [newLevel, setNewLevel] = useState<number>(1);
+  const [newLevel, setNewLevel] = useState<number>(2);
 
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,6 +61,18 @@ export default function TOCBuilder({ items, onChange, onInsertIntoEditor }: Prop
     onChange(updated);
   };
 
+  const getIndentClass = (level: number) => {
+    switch (level) {
+      case 1: return 'ml-0 bg-white border-stone-300 font-bold';
+      case 2: return 'ml-2 bg-white border-stone-200 font-semibold';
+      case 3: return 'ml-6 bg-stone-50/90 border-stone-200 text-xs';
+      case 4: return 'ml-8 bg-stone-50/70 border-stone-200 text-xs';
+      case 5: return 'ml-10 bg-stone-50/50 border-stone-200 text-xs';
+      case 6: return 'ml-12 bg-stone-50/30 border-stone-200 text-xs text-stone-500';
+      default: return 'ml-2 bg-white border-stone-200';
+    }
+  };
+
   return (
     <div className="bg-white rounded-xl border border-stone-200/90 p-5 shadow-sm">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 mb-4 border-b border-stone-200">
@@ -70,7 +82,7 @@ export default function TOCBuilder({ items, onChange, onInsertIntoEditor }: Prop
             <span>Table of Contents Outline</span>
           </h3>
           <p className="text-xs text-stone-500 mt-0.5">
-            Define your sections here. You can then insert them directly into your writing area.
+            Plan your outline from H1 to H6. Then click &ldquo;Insert Sections Into Editor&rdquo; to populate your writing space.
           </p>
         </div>
 
@@ -96,9 +108,7 @@ export default function TOCBuilder({ items, onChange, onInsertIntoEditor }: Prop
           {items.map((item, idx) => (
             <div
               key={item.id}
-              className={`flex items-center gap-2 p-2 rounded-lg border transition-all ${
-                item.level === 2 ? 'ml-6 bg-stone-50/80 border-stone-200' : 'bg-white border-stone-200'
-              }`}
+              className={`flex items-center gap-2 p-2 rounded-lg border transition-all ${getIndentClass(item.level)}`}
             >
               <span className="text-xs font-mono text-stone-400 w-6 text-center">{idx + 1}.</span>
 
@@ -108,17 +118,21 @@ export default function TOCBuilder({ items, onChange, onInsertIntoEditor }: Prop
                 value={item.title}
                 onChange={(e) => handleUpdateItem(idx, e.target.value, item.level)}
                 placeholder="Section title"
-                className="flex-1 text-sm bg-transparent border-0 focus:ring-1 focus:ring-blue-500 rounded px-2 py-1 text-slate-800 font-medium"
+                className="flex-1 text-sm bg-transparent border-0 focus:ring-1 focus:ring-blue-500 rounded px-2 py-1 text-slate-800"
               />
 
-              {/* Level selector */}
+              {/* Level selector: H1 to H6 */}
               <select
                 value={item.level}
                 onChange={(e) => handleUpdateItem(idx, item.title, Number(e.target.value))}
-                className="text-xs border border-stone-200 rounded px-2 py-1 bg-stone-50 text-stone-600 focus:outline-none"
+                className="text-xs border border-stone-200 rounded px-2 py-1 bg-stone-50 text-stone-700 focus:outline-none"
               >
-                <option value={1}>Main (H2)</option>
-                <option value={2}>Sub (H3)</option>
+                <option value={1}>H1</option>
+                <option value={2}>H2</option>
+                <option value={3}>H3</option>
+                <option value={4}>H4</option>
+                <option value={5}>H5</option>
+                <option value={6}>H6</option>
               </select>
 
               {/* Order Controls */}
@@ -161,7 +175,7 @@ export default function TOCBuilder({ items, onChange, onInsertIntoEditor }: Prop
           type="text"
           value={newTitle}
           onChange={(e) => setNewTitle(e.target.value)}
-          placeholder="e.g. Chapter 1: Introduction / Key Findings"
+          placeholder="e.g. Chapter 1: Introduction / Findings"
           className="flex-1 text-sm border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
 
@@ -171,8 +185,12 @@ export default function TOCBuilder({ items, onChange, onInsertIntoEditor }: Prop
             onChange={(e) => setNewLevel(Number(e.target.value))}
             className="text-sm border border-stone-300 rounded-lg px-3 py-2 bg-white text-stone-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <option value={1}>Main Section</option>
-            <option value={2}>Sub-section</option>
+            <option value={1}>Heading 1 (H1)</option>
+            <option value={2}>Heading 2 (H2)</option>
+            <option value={3}>Heading 3 (H3)</option>
+            <option value={4}>Heading 4 (H4)</option>
+            <option value={5}>Heading 5 (H5)</option>
+            <option value={6}>Heading 6 (H6)</option>
           </select>
 
           <button

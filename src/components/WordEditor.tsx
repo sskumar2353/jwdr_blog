@@ -12,13 +12,14 @@ import Underline from '@tiptap/extension-underline';
 import TextAlign from '@tiptap/extension-text-align';
 import Highlight from '@tiptap/extension-highlight';
 import Placeholder from '@tiptap/extension-placeholder';
+import Link from '@tiptap/extension-link';
 import {
   Bold, Italic, Underline as UnderlineIcon, Strikethrough,
-  Heading1, Heading2, Heading3,
   AlignLeft, AlignCenter, AlignRight, AlignJustify,
   List, ListOrdered, Quote, Minus,
   Table as TableIcon, Image as ImageIcon,
-  Undo, Redo, Highlighter, Rows, Columns, Trash2
+  Undo, Redo, Highlighter, Rows, Columns, Trash2,
+  Link2, Unlink
 } from 'lucide-react';
 
 interface Props {
@@ -34,7 +35,7 @@ export default function WordEditor({ content, onChange, editorRef }: Props) {
     extensions: [
       StarterKit.configure({
         heading: {
-          levels: [1, 2, 3],
+          levels: [1, 2, 3, 4, 5, 6],
         },
       }),
       Underline,
@@ -52,6 +53,12 @@ export default function WordEditor({ content, onChange, editorRef }: Props) {
         inline: false,
         allowBase64: true,
       }),
+      Link.configure({
+        openOnClick: false,
+        HTMLAttributes: {
+          class: 'text-blue-600 underline hover:text-blue-800 transition-colors cursor-pointer',
+        },
+      }),
       Placeholder.configure({
         placeholder: 'Begin typing your blog post here... just like a Word document.',
       }),
@@ -67,7 +74,6 @@ export default function WordEditor({ content, onChange, editorRef }: Props) {
     },
   });
 
-  // Assign editor instance to ref if passed
   if (editorRef && editor) {
     editorRef.current = editor;
   }
@@ -99,7 +105,7 @@ export default function WordEditor({ content, onChange, editorRef }: Props) {
       } else {
         alert(data.error || 'Failed to upload image');
       }
-    } catch (err) {
+    } catch {
       alert('Error uploading image');
     } finally {
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -113,8 +119,43 @@ export default function WordEditor({ content, onChange, editorRef }: Props) {
     }
   };
 
+  const handleSetLink = () => {
+    const previousUrl = editor.getAttributes('link').href;
+    const url = window.prompt('Enter or edit hyperlink URL (e.g. https://example.com):', previousUrl);
+
+    if (url === null) {
+      return; // cancelled
+    }
+
+    if (url === '') {
+      editor.chain().focus().extendMarkRange('link').unsetLink().run();
+      return;
+    }
+
+    // Ensure protocol
+    const finalUrl = /^https?:\/\//i.test(url) ? url : `https://${url}`;
+    editor.chain().focus().extendMarkRange('link').setLink({ href: finalUrl }).run();
+  };
+
   const insertTable = () => {
     editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
+  };
+
+  // Get current active heading level
+  const getCurrentHeadingValue = () => {
+    for (let i = 1; i <= 6; i++) {
+      if (editor.isActive('heading', { level: i })) return `h${i}`;
+    }
+    return 'p';
+  };
+
+  const handleHeadingSelect = (val: string) => {
+    if (val === 'p') {
+      editor.chain().focus().setParagraph().run();
+    } else {
+      const lvl = parseInt(val.replace('h', ''), 10) as 1 | 2 | 3 | 4 | 5 | 6;
+      editor.chain().focus().toggleHeading({ level: lvl }).run();
+    }
   };
 
   return (
@@ -129,9 +170,9 @@ export default function WordEditor({ content, onChange, editorRef }: Props) {
       />
 
       {/* Word-like Ribbon Toolbar */}
-      <div className="bg-stone-100 border-b border-stone-200 p-2 flex flex-wrap items-center gap-1 text-slate-700 select-none">
+      <div className="bg-stone-100 border-b border-stone-200 p-2 flex flex-wrap items-center gap-1.5 text-slate-700 select-none">
         {/* Undo / Redo */}
-        <div className="flex items-center border-r border-stone-300 pr-1.5 mr-1 gap-0.5">
+        <div className="flex items-center border-r border-stone-300 pr-1.5 mr-0.5 gap-0.5">
           <button
             type="button"
             onClick={() => editor.chain().focus().undo().run()}
@@ -152,36 +193,25 @@ export default function WordEditor({ content, onChange, editorRef }: Props) {
           </button>
         </div>
 
-        {/* Headings */}
-        <div className="flex items-center border-r border-stone-300 pr-1.5 mr-1 gap-0.5">
-          <button
-            type="button"
-            onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-            className={`p-1.5 rounded font-bold text-xs ${editor.isActive('heading', { level: 1 }) ? 'bg-blue-600 text-white' : 'hover:bg-stone-200'}`}
-            title="Heading 1"
+        {/* Headings Selector: H1 to H6 */}
+        <div className="flex items-center border-r border-stone-300 pr-2 mr-0.5">
+          <select
+            value={getCurrentHeadingValue()}
+            onChange={(e) => handleHeadingSelect(e.target.value)}
+            className="text-xs font-semibold bg-white border border-stone-300 rounded-lg px-2.5 py-1.5 text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer shadow-sm"
           >
-            <Heading1 className="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-            className={`p-1.5 rounded font-bold text-xs ${editor.isActive('heading', { level: 2 }) ? 'bg-blue-600 text-white' : 'hover:bg-stone-200'}`}
-            title="Heading 2 (Main Section)"
-          >
-            <Heading2 className="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-            className={`p-1.5 rounded font-bold text-xs ${editor.isActive('heading', { level: 3 }) ? 'bg-blue-600 text-white' : 'hover:bg-stone-200'}`}
-            title="Heading 3 (Sub-section)"
-          >
-            <Heading3 className="w-4 h-4" />
-          </button>
+            <option value="p">Normal Text</option>
+            <option value="h1">Heading 1 (H1)</option>
+            <option value="h2">Heading 2 (H2)</option>
+            <option value="h3">Heading 3 (H3)</option>
+            <option value="h4">Heading 4 (H4)</option>
+            <option value="h5">Heading 5 (H5)</option>
+            <option value="h6">Heading 6 (H6)</option>
+          </select>
         </div>
 
         {/* Text Styles */}
-        <div className="flex items-center border-r border-stone-300 pr-1.5 mr-1 gap-0.5">
+        <div className="flex items-center border-r border-stone-300 pr-1.5 mr-0.5 gap-0.5">
           <button
             type="button"
             onClick={() => editor.chain().focus().toggleBold().run()}
@@ -224,8 +254,33 @@ export default function WordEditor({ content, onChange, editorRef }: Props) {
           </button>
         </div>
 
+        {/* Hyperlink Tool */}
+        <div className="flex items-center border-r border-stone-300 pr-1.5 mr-0.5 gap-0.5">
+          <button
+            type="button"
+            onClick={handleSetLink}
+            className={`flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded ${
+              editor.isActive('link') ? 'bg-blue-600 text-white' : 'hover:bg-stone-200 text-stone-700'
+            }`}
+            title="Insert or Edit Hyperlink"
+          >
+            <Link2 className="w-3.5 h-3.5 text-blue-500" />
+            <span>Link</span>
+          </button>
+          {editor.isActive('link') && (
+            <button
+              type="button"
+              onClick={() => editor.chain().focus().unsetLink().run()}
+              className="p-1.5 rounded hover:bg-stone-200 text-rose-600"
+              title="Remove Hyperlink"
+            >
+              <Unlink className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+
         {/* Alignments */}
-        <div className="flex items-center border-r border-stone-300 pr-1.5 mr-1 gap-0.5">
+        <div className="flex items-center border-r border-stone-300 pr-1.5 mr-0.5 gap-0.5">
           <button
             type="button"
             onClick={() => editor.chain().focus().setTextAlign('left').run()}
@@ -261,7 +316,7 @@ export default function WordEditor({ content, onChange, editorRef }: Props) {
         </div>
 
         {/* Lists & Quotes */}
-        <div className="flex items-center border-r border-stone-300 pr-1.5 mr-1 gap-0.5">
+        <div className="flex items-center border-r border-stone-300 pr-1.5 mr-0.5 gap-0.5">
           <button
             type="button"
             onClick={() => editor.chain().focus().toggleBulletList().run()}
@@ -297,11 +352,11 @@ export default function WordEditor({ content, onChange, editorRef }: Props) {
         </div>
 
         {/* Images */}
-        <div className="flex items-center border-r border-stone-300 pr-1.5 mr-1 gap-0.5">
+        <div className="flex items-center border-r border-stone-300 pr-1.5 mr-0.5 gap-0.5">
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded bg-white hover:bg-stone-200 border border-stone-300"
+            className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded bg-white hover:bg-stone-200 border border-stone-300 shadow-sm"
             title="Upload Image from Computer"
           >
             <ImageIcon className="w-3.5 h-3.5 text-blue-600" />
@@ -313,7 +368,7 @@ export default function WordEditor({ content, onChange, editorRef }: Props) {
             className="px-2 py-1 text-xs rounded hover:bg-stone-200 text-stone-600"
             title="Insert from URL"
           >
-            Link URL
+            Link Image
           </button>
         </div>
 
@@ -323,7 +378,7 @@ export default function WordEditor({ content, onChange, editorRef }: Props) {
             <button
               type="button"
               onClick={insertTable}
-              className="flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded bg-white hover:bg-stone-200 border border-stone-300"
+              className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded bg-white hover:bg-stone-200 border border-stone-300 shadow-sm"
               title="Insert 3x3 Table"
             >
               <TableIcon className="w-3.5 h-3.5 text-emerald-600" />

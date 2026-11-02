@@ -61,24 +61,26 @@ export default function HomePage() {
               });
 
               return (
-                <article
+                <Link
                   key={post.id}
-                  className="group bg-white rounded-2xl border border-stone-200/80 p-7 sm:p-9 shadow-sm hover:shadow-md hover:border-blue-200 transition-all"
+                  href={`/posts/${post.slug}`}
+                  className="group relative block bg-white rounded-2xl border border-stone-200/90 p-7 sm:p-9 shadow-sm hover:shadow-lg hover:border-blue-400 transition-all duration-200 cursor-pointer"
                 >
+                  {/* Metadata Row */}
                   <div className="flex flex-wrap items-center gap-4 text-xs text-stone-500 mb-3 font-sans">
-                    <span className="flex items-center gap-1.5">
+                    <span className="flex items-center gap-1.5 font-medium">
                       <Calendar className="w-3.5 h-3.5 text-stone-400" />
                       {formattedDate}
                     </span>
                     <span>&bull;</span>
-                    <span className="flex items-center gap-1.5">
+                    <span className="flex items-center gap-1.5 font-medium">
                       <Clock className="w-3.5 h-3.5 text-stone-400" />
                       {post.readingTime}
                     </span>
                     {post.tableOfContents && post.tableOfContents.length > 0 && (
                       <>
                         <span>&bull;</span>
-                        <span className="flex items-center gap-1.5 text-blue-600 font-medium">
+                        <span className="flex items-center gap-1.5 text-blue-600 font-semibold">
                           <ListTree className="w-3.5 h-3.5" />
                           {post.tableOfContents.length} Sections in TOC
                         </span>
@@ -86,24 +88,24 @@ export default function HomePage() {
                     )}
                   </div>
 
+                  {/* Title */}
                   <h3 className="text-2xl sm:text-3xl font-serif font-bold text-slate-900 group-hover:text-blue-600 transition-colors leading-snug">
-                    <Link href={`/posts/${post.slug}`}>
-                      {post.title}
-                    </Link>
+                    {post.title}
                   </h3>
 
+                  {/* Excerpt */}
                   <p className="mt-3 text-base text-stone-600 leading-relaxed font-sans line-clamp-3">
                     {post.excerpt}
                   </p>
 
-                  {/* Section preview chips if post has TOC */}
+                  {/* Section preview outline chips */}
                   {post.tableOfContents && post.tableOfContents.length > 0 && (
                     <div className="mt-4 pt-4 border-t border-stone-100 flex flex-wrap gap-2">
                       <span className="text-xs text-stone-400 font-medium self-center mr-1">Outline:</span>
                       {post.tableOfContents.slice(0, 4).map((toc) => (
                         <span
                           key={toc.id}
-                          className="text-xs px-2.5 py-0.5 rounded-full bg-stone-100 text-stone-600 border border-stone-200"
+                          className="text-xs px-2.5 py-0.5 rounded-full bg-stone-100 text-stone-600 border border-stone-200/80 group-hover:border-blue-200 transition-colors"
                         >
                           {toc.title}
                         </span>
@@ -116,27 +118,25 @@ export default function HomePage() {
                     </div>
                   )}
 
-                  <div className="mt-6 flex items-center justify-between">
+                  {/* Bottom Footer: Tags + Read Essay Button */}
+                  <div className="mt-6 flex items-center justify-between pt-2">
                     <div className="flex flex-wrap gap-1.5">
                       {post.tags?.map((tag) => (
                         <span
                           key={tag}
-                          className="text-xs font-medium text-stone-500 bg-stone-50 px-2 py-0.5 rounded"
+                          className="text-xs font-medium text-stone-500 bg-stone-100 px-2.5 py-0.5 rounded-md"
                         >
                           #{tag}
                         </span>
                       ))}
                     </div>
 
-                    <Link
-                      href={`/posts/${post.slug}`}
-                      className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 group-hover:text-blue-700 transition-colors"
-                    >
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 group-hover:bg-blue-600 text-white text-xs font-semibold shadow-sm transition-all duration-200">
                       <span>Read Essay</span>
-                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                    </Link>
+                      <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                    </div>
                   </div>
-                </article>
+                </Link>
               );
             })}
           </div>

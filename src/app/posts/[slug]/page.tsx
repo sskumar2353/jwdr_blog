@@ -1,12 +1,20 @@
 import React from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getPostBySlug, getSettings } from '@/lib/storage';
+import { getAllPosts, getPostBySlug, getSettings } from '@/lib/storage';
 import { isAuthenticated } from '@/lib/auth';
 import TableOfContents from '@/components/TableOfContents';
-import { ArrowLeft, Calendar, Clock, Edit3, Share2 } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock } from 'lucide-react';
 
+export const dynamicParams = true;
 export const revalidate = 0;
+
+export async function generateStaticParams() {
+  const posts = getAllPosts(true);
+  return posts.map((p) => ({
+    slug: p.slug,
+  }));
+}
 
 export default function ArticlePage({ params }: { params: { slug: string } }) {
   const isAuthor = isAuthenticated();
@@ -40,12 +48,12 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
       {/* Article Header */}
       <header className="max-w-3xl mb-12">
         <div className="flex flex-wrap items-center gap-3 text-xs text-stone-500 mb-4 font-sans">
-          <span className="flex items-center gap-1">
+          <span className="flex items-center gap-1 font-medium">
             <Calendar className="w-3.5 h-3.5" />
             {formattedDate}
           </span>
           <span>&bull;</span>
-          <span className="flex items-center gap-1">
+          <span className="flex items-center gap-1 font-medium">
             <Clock className="w-3.5 h-3.5" />
             {post.readingTime}
           </span>

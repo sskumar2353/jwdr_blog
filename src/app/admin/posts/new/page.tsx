@@ -31,7 +31,8 @@ export default function NewPostPage() {
 
     let generatedHtml = '';
     items.forEach((item) => {
-      const tag = item.level === 2 ? 'h3' : 'h2';
+      const level = Math.min(Math.max(item.level || 2, 1), 6);
+      const tag = `h${level}`;
       generatedHtml += `<${tag} id="${item.id}">${item.title}</${tag}><p>Write your matter here...</p>`;
     });
 
