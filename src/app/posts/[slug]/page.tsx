@@ -10,7 +10,8 @@ export const revalidate = 0;
 
 export default function ArticlePage({ params }: { params: { slug: string } }) {
   const isAuthor = isAuthenticated();
-  const post = getPostBySlug(params.slug, isAuthor);
+  const decodedSlug = decodeURIComponent(params.slug);
+  const post = getPostBySlug(decodedSlug, isAuthor) || getPostBySlug(params.slug, isAuthor);
   const settings = getSettings();
 
   if (!post) {
@@ -34,17 +35,6 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
           <ArrowLeft className="w-4 h-4" />
           <span>Back to Master Index</span>
         </Link>
-
-        {/* If author is logged in, show quick Edit button */}
-        {isAuthor && (
-          <Link
-            href={`/admin/posts/${post.id}/edit`}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 border border-blue-200 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
-          >
-            <Edit3 className="w-3.5 h-3.5" />
-            <span>Edit this Post</span>
-          </Link>
-        )}
       </div>
 
       {/* Article Header */}

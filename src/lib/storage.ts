@@ -41,7 +41,17 @@ export interface SiteSettings {
   adminPassword: string; // Stored securely
 }
 
-const DATA_DIR = path.join(process.cwd(), 'data');
+function getDataDir(): string {
+  const cwdData = path.join(process.cwd(), 'data');
+  if (fs.existsSync(cwdData)) return cwdData;
+  const projectData = path.resolve(__dirname, '../../data');
+  if (fs.existsSync(projectData)) return projectData;
+  const hardcoded = 'D:\\Joseph Anna\\data';
+  if (fs.existsSync(hardcoded)) return hardcoded;
+  return cwdData;
+}
+
+const DATA_DIR = getDataDir();
 const POSTS_FILE = path.join(DATA_DIR, 'posts.json');
 const MESSAGES_FILE = path.join(DATA_DIR, 'messages.json');
 const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
@@ -171,8 +181,10 @@ export function getAllPosts(includeUnpublished = false): BlogPost[] {
 }
 
 export function getPostBySlug(slug: string, includeUnpublished = false): BlogPost | null {
+  if (!slug) return null;
   const posts = getAllPosts(includeUnpublished);
-  return posts.find(p => p.slug === slug) || null;
+  const clean = slug.toLowerCase().replace(/^\/+|\/+$/g, '').trim();
+  return posts.find(p => p.slug.toLowerCase() === clean || p.id === clean) || null;
 }
 
 export function getPostById(id: string): BlogPost | null {

@@ -32,14 +32,14 @@ export default function Navbar() {
 
   return (
     <>
-      {/* Top Admin Status Bar (Only visible when logged in as author) */}
-      {isAdmin && (
+      {/* Top Admin Bar (ONLY visible when actively navigating inside /admin) */}
+      {isAdmin && pathname.startsWith('/admin') && (
         <aside aria-label="Author controls" className="bg-slate-900 text-slate-100 px-4 py-2 text-xs font-medium sticky top-0 z-50 shadow-md">
           <div className="max-w-6xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Author Mode Active</span>
+              <span>Author Workspace</span>
             </div>
             <div className="flex items-center gap-4">
               <Link 
