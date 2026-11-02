@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 import bundledPostsData from '../../data/posts.json';
 import bundledSettingsData from '../../data/settings.json';
 
@@ -62,6 +63,7 @@ function getDataDir(): string {
 const DATA_DIR = getDataDir();
 const POSTS_FILE = path.join(DATA_DIR, 'posts.json');
 const MESSAGES_FILE = path.join(DATA_DIR, 'messages.json');
+const TMP_MESSAGES_FILE = path.join(os.tmpdir(), 'jwdr_messages.json');
 const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
 
 function ensureDataDir() {
@@ -252,17 +254,47 @@ export function deletePost(id: string): boolean {
 }
 
 export function getAllMessages(): ContactMessage[] {
-  if (_messagesCache) return _messagesCache;
+  const messageMap = new Map<string, ContactMessage>();
+
+  // 1. Load from memory cache
+  if (_messagesCache) {
+    for (const m of _messagesCache) {
+      if (m?.id) messageMap.set(m.id, m);
+    }
+  }
+
+  // 2. Load from serverless tmp storage (/tmp/jwdr_messages.json)
+  try {
+    if (fs.existsSync(TMP_MESSAGES_FILE)) {
+      const raw = fs.readFileSync(TMP_MESSAGES_FILE, 'utf-8');
+      const parsed: ContactMessage[] = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        for (const m of parsed) {
+          if (m?.id && !messageMap.has(m.id)) messageMap.set(m.id, m);
+        }
+      }
+    }
+  } catch {}
+
+  // 3. Load from project data directory if present
   try {
     ensureDataDir();
     if (fs.existsSync(MESSAGES_FILE)) {
       const raw = fs.readFileSync(MESSAGES_FILE, 'utf-8');
       const parsed: ContactMessage[] = JSON.parse(raw);
-      _messagesCache = parsed;
-      return parsed;
+      if (Array.isArray(parsed)) {
+        for (const m of parsed) {
+          if (m?.id && !messageMap.has(m.id)) messageMap.set(m.id, m);
+        }
+      }
     }
   } catch {}
-  return [];
+
+  const merged = Array.from(messageMap.values()).sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+  _messagesCache = merged;
+  return merged;
 }
 
 export function saveContactMessage(msg: { name: string; email: string; subject: string; message: string }): ContactMessage {
@@ -278,13 +310,65 @@ export function saveContactMessage(msg: { name: string; email: string; subject: 
   };
   messages.unshift(newMsg);
   _messagesCache = messages;
+
+  // Persist to serverless /tmp directory (writable in AWS Lambda & Vercel)
+  try {
+    fs.writeFileSync(TMP_MESSAGES_FILE, JSON.stringify(messages, null, 2), 'utf-8');
+  } catch (err) {
+    console.warn('Notice: Serverless tmp write error:', err);
+  }
+
+  // Also persist to project data file when running locally or on writable disks
   try {
     ensureDataDir();
     fs.writeFileSync(MESSAGES_FILE, JSON.stringify(messages, null, 2), 'utf-8');
   } catch (err) {
     console.warn('Filesystem write notice (contact message):', err);
   }
+
+  // Trigger non-blocking cloud KV persistence if Vercel KV / Upstash is configured
+  saveCloudMessages(messages).catch(() => {});
+
   return newMsg;
+}
+
+// Optional Vercel KV / Upstash Redis sync for 100% persistent cloud storage
+async function saveCloudMessages(messages: ContactMessage[]): Promise<boolean> {
+  const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return false;
+  try {
+    const res = await fetch(`${url}/set/jwdr_messages`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(messages),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function getCloudMessages(): Promise<ContactMessage[] | null> {
+  const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return null;
+  try {
+    const res = await fetch(`${url}/get/jwdr_messages`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: 'no-store'
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.result) {
+        return typeof data.result === 'string' ? JSON.parse(data.result) : data.result;
+      }
+    }
+  } catch {}
+  return null;
 }
 
 export function markMessageRead(id: string): boolean {
@@ -294,11 +378,15 @@ export function markMessageRead(id: string): boolean {
     target.read = true;
     _messagesCache = messages;
     try {
+      fs.writeFileSync(TMP_MESSAGES_FILE, JSON.stringify(messages, null, 2), 'utf-8');
+    } catch {}
+    try {
       ensureDataDir();
       fs.writeFileSync(MESSAGES_FILE, JSON.stringify(messages, null, 2), 'utf-8');
     } catch (err) {
       console.warn('Filesystem write notice (mark read):', err);
     }
+    saveCloudMessages(messages).catch(() => {});
     return true;
   }
   return false;

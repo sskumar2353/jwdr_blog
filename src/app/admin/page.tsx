@@ -9,6 +9,7 @@ import {
   FileText
 } from 'lucide-react';
 import DeletePostButton from './DeletePostButton';
+import EmailTesterButton from './EmailTesterButton';
 
 export const revalidate = 0;
 
@@ -177,17 +178,17 @@ export default function AdminDashboardPage() {
 
       {/* Reader Contact Inquiries Section */}
       <section className="bg-white rounded-2xl border border-stone-200/90 shadow-sm overflow-hidden">
-        <div className="p-5 border-b border-stone-200 flex items-center justify-between">
+        <div className="p-5 border-b border-stone-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h2 className="text-lg font-serif font-bold text-slate-900 flex items-center gap-2">
               <Mail className="w-5 h-5 text-blue-600" />
               <span>Reader Messages & Feedback</span>
             </h2>
             <p className="text-xs text-stone-500 mt-0.5">
-              Messages submitted through your public contact form.
+              Messages submitted through your public contact form ({messages.length} received).
             </p>
           </div>
-          <span className="text-xs text-stone-500 font-semibold">{messages.length} received</span>
+          <EmailTesterButton />
         </div>
 
         {messages.length === 0 ? (
