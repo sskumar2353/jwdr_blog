@@ -4,8 +4,8 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
 export const metadata: Metadata = {
-  title: 'JWDR Blog | Writings, Essays & Reflections',
-  description: 'A personal sanctuary for thoughtful essays, observations, and structured writings.',
+  title: "JWDR's Blog | Joy in the Journey",
+  description: 'A personal sanctuary for thoughtful reflections, and writings.',
 };
 
 export default function RootLayout({

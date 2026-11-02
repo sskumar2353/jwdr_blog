@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { getAllPosts, getSettings } from '@/lib/storage';
-import { Calendar, Clock, ListTree, ArrowRight, Sparkles } from 'lucide-react';
+import { Calendar, Clock, ListTree, ArrowRight } from 'lucide-react';
 
 export const revalidate = 0; // Dynamic server rendering for instant updates
 

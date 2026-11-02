@@ -78,10 +78,10 @@ let _settingsCache: SiteSettings | null = null;
 let _messagesCache: ContactMessage[] | null = null;
 
 const DEFAULT_SETTINGS: SiteSettings = {
-  siteTitle: 'JWDR Blog',
-  tagline: 'Essays, Writings & Reflections',
-  authorName: 'Joseph Anna',
-  authorBio: 'Writer, thinker, and blogger. Sharing thoughts, essays, and stories on life, craft, and observations.',
+  siteTitle: "JWDR's Blog",
+  tagline: 'Joy in the Journey',
+  authorName: 'Joseph ',
+  authorBio: 'Writer, thinker, and blogger. Sharing thoughts, and stories on life, craft, and observations.',
   authorEmail: 'contact@jwdr.blog',
   adminPassword: 'admin',
   smtpHost: '',
