@@ -1,6 +1,16 @@
 import { NextResponse } from 'next/server';
-import { saveContactMessage, getAllMessages, markMessageRead, getSettings, getCloudMessages } from '@/lib/storage';
+import {
+  saveContactMessage,
+  getAllMessages,
+  markMessageRead,
+  markAllMessagesRead,
+  deleteMessage,
+  clearAllReadMessages,
+  getSettings,
+  getCloudMessages
+} from '@/lib/storage';
 import { isAuthenticated } from '@/lib/auth';
+import { renderAdminNotificationEmail } from '@/lib/emailTemplates';
 import nodemailer from 'nodemailer';
 
 export async function POST(request: Request) {
@@ -17,10 +27,19 @@ export async function POST(request: Request) {
     const saved = saveContactMessage({ name, email, subject, message });
     const settings = getSettings();
 
-    const targetRecipient = process.env.AUTHOR_EMAIL || settings.authorEmail || 'contact@jwdr.blog';
+    const targetRecipient = process.env.AUTHOR_EMAIL || settings.authorEmail || 'saiofficial2284@gmail.com';
     let emailSent = false;
     let emailStatus = 'pending';
     let emailError: string | null = null;
+
+    const emailHtml = renderAdminNotificationEmail({
+      siteTitle: settings.siteTitle,
+      senderName: name,
+      senderEmail: email,
+      subject: subject || 'New Contact Inquiry',
+      message: message,
+      portalUrl: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://jwdr-blog.vercel.app'}/admin/messages`
+    });
 
     // 1. Try Resend API if RESEND_API_KEY is configured
     if (process.env.RESEND_API_KEY) {
@@ -35,19 +54,9 @@ export async function POST(request: Request) {
             from: process.env.RESEND_FROM || `${settings.siteTitle} <onboarding@resend.dev>`,
             to: [targetRecipient],
             reply_to: email,
-            subject: `[Blog Inquiry] ${subject || 'New Message'} from ${name}`,
+            subject: `[${settings.siteTitle}] New Message from ${name}: ${subject || 'Inquiry'}`,
             text: `From: ${name} (${email})\nSubject: ${subject}\n\nMessage:\n${message}`,
-            html: `
-              <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
-                <h2 style="color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">New Message on ${settings.siteTitle}</h2>
-                <p><strong>From:</strong> ${name} &lt;<a href="mailto:${email}">${email}</a>&gt;</p>
-                <p><strong>Subject:</strong> ${subject || 'No Subject'}</p>
-                <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px solid #e2e8f0;">
-                  <p style="white-space: pre-wrap; margin: 0; color: #1e293b;">${message}</p>
-                </div>
-                <p style="font-size: 12px; color: #64748b;">Reply directly to this email to reach ${name}.</p>
-              </div>
-            `,
+            html: emailHtml,
           }),
         });
         if (res.ok) {
@@ -69,7 +78,6 @@ export async function POST(request: Request) {
       const smtpHost = process.env.SMTP_HOST || settings.smtpHost;
       const smtpPort = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : (settings.smtpPort || 587);
       const smtpUser = process.env.SMTP_USER || settings.smtpUser;
-      // Strip spaces (e.g. Gmail 16-character app passwords copied with spaces)
       const smtpPass = (process.env.SMTP_PASS || settings.smtpPass || '').replace(/\s+/g, '');
       const smtpSecure = process.env.SMTP_SECURE === 'true' || smtpPort === 465 || Boolean(settings.smtpSecure);
 
@@ -92,19 +100,9 @@ export async function POST(request: Request) {
             from: `"${name} (via Blog)" <${smtpUser}>`,
             to: targetRecipient,
             replyTo: email,
-            subject: `[Blog Inquiry] ${subject || 'New Message'} from ${name}`,
-            text: `You received a new message on your blog:\n\nFrom: ${name} (${email})\nSubject: ${subject}\n\nMessage:\n${message}\n\n---\nView all messages in your Author Portal: http://localhost:3000/admin`,
-            html: `
-              <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
-                <h2 style="color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">New Message on ${settings.siteTitle}</h2>
-                <p><strong>From:</strong> ${name} &lt;<a href="mailto:${email}">${email}</a>&gt;</p>
-                <p><strong>Subject:</strong> ${subject || 'No Subject'}</p>
-                <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px solid #e2e8f0;">
-                  <p style="white-space: pre-wrap; margin: 0; color: #1e293b;">${message}</p>
-                </div>
-                <p style="font-size: 12px; color: #64748b;">You can reply directly to this email to contact ${name}.</p>
-              </div>
-            `,
+            subject: `[${settings.siteTitle}] Inquiry from ${name}: ${subject || 'New Message'}`,
+            text: `From: ${name} (${email})\nSubject: ${subject}\n\nMessage:\n${message}\n\nManage in Author Portal: https://jwdr-blog.vercel.app/admin/messages`,
+            html: emailHtml,
           });
           emailSent = true;
           emailStatus = 'delivered';
@@ -136,7 +134,6 @@ export async function GET() {
     return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Combine local/tmp messages with cloud KV if present
   const localMessages = getAllMessages();
   const cloudMessages = await getCloudMessages().catch(() => null);
 
@@ -159,7 +156,36 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { id } = await request.json();
-  const success = markMessageRead(id);
-  return NextResponse.json({ success });
+  try {
+    const body = await request.json();
+    if (body.all) {
+      const success = markAllMessagesRead();
+      return NextResponse.json({ success });
+    }
+    const success = markMessageRead(body.id);
+    return NextResponse.json({ success });
+  } catch {
+    return NextResponse.json({ success: false }, { status: 400 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  if (!isAuthenticated()) {
+    return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    const body = await request.json();
+    if (body.clearRead) {
+      const success = clearAllReadMessages();
+      return NextResponse.json({ success, message: 'All read notifications cleared.' });
+    }
+    if (body.id) {
+      const success = deleteMessage(body.id);
+      return NextResponse.json({ success, message: 'Message deleted successfully.' });
+    }
+    return NextResponse.json({ success: false, error: 'Missing id or clearRead flag' }, { status: 400 });
+  } catch {
+    return NextResponse.json({ success: false }, { status: 400 });
+  }
 }

@@ -33,6 +33,10 @@ export interface ContactMessage {
   message: string;
   createdAt: string;
   read: boolean;
+  replied?: boolean;
+  repliedAt?: string;
+  replySubject?: string;
+  replyContent?: string;
 }
 
 export interface SiteSettings {
@@ -377,17 +381,66 @@ export function markMessageRead(id: string): boolean {
   if (target) {
     target.read = true;
     _messagesCache = messages;
-    try {
-      fs.writeFileSync(TMP_MESSAGES_FILE, JSON.stringify(messages, null, 2), 'utf-8');
-    } catch {}
-    try {
-      ensureDataDir();
-      fs.writeFileSync(MESSAGES_FILE, JSON.stringify(messages, null, 2), 'utf-8');
-    } catch (err) {
-      console.warn('Filesystem write notice (mark read):', err);
-    }
-    saveCloudMessages(messages).catch(() => {});
+    persistMessages(messages);
     return true;
   }
   return false;
+}
+
+export function markAllMessagesRead(): boolean {
+  const messages = getAllMessages();
+  for (const m of messages) {
+    m.read = true;
+  }
+  _messagesCache = messages;
+  persistMessages(messages);
+  return true;
+}
+
+export function deleteMessage(id: string): boolean {
+  const messages = getAllMessages();
+  const filtered = messages.filter(m => m.id !== id);
+  if (filtered.length !== messages.length) {
+    _messagesCache = filtered;
+    persistMessages(filtered);
+    return true;
+  }
+  return false;
+}
+
+export function clearAllReadMessages(): boolean {
+  const messages = getAllMessages();
+  const unreadOnly = messages.filter(m => !m.read);
+  _messagesCache = unreadOnly;
+  persistMessages(unreadOnly);
+  return true;
+}
+
+export function saveMessageReply(id: string, reply: { replySubject: string; replyContent: string }): ContactMessage | null {
+  const messages = getAllMessages();
+  const target = messages.find(m => m.id === id);
+  if (target) {
+    target.read = true;
+    target.replied = true;
+    target.repliedAt = new Date().toISOString();
+    target.replySubject = reply.replySubject;
+    target.replyContent = reply.replyContent;
+    _messagesCache = messages;
+    persistMessages(messages);
+    return target;
+  }
+  return null;
+}
+
+function persistMessages(messages: ContactMessage[]) {
+  try {
+    fs.writeFileSync(TMP_MESSAGES_FILE, JSON.stringify(messages, null, 2), 'utf-8');
+  } catch {}
+  try {
+    ensureDataDir();
+    fs.writeFileSync(MESSAGES_FILE, JSON.stringify(messages, null, 2), 'utf-8');
+  } catch (err) {
+    console.warn('Filesystem write notice (messages):', err);
+  }
+  saveCloudMessages(messages).catch(() => {});
 }

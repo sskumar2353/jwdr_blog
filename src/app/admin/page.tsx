@@ -90,15 +90,28 @@ export default async function AdminDashboardPage() {
           </div>
         </div>
 
-        <div className="p-5 rounded-2xl bg-white border border-stone-200/90 shadow-sm flex items-center justify-between">
+        <Link
+          href="/admin/messages"
+          className="p-5 rounded-2xl bg-white hover:bg-stone-50/80 border border-stone-200/90 shadow-sm flex items-center justify-between transition-colors group"
+          title="View all reader inquiries & past notifications"
+        >
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-stone-400">Reader Messages</p>
-            <p className="text-2xl font-serif font-bold text-slate-900 mt-1">{messages.length}</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-stone-400 group-hover:text-blue-600 transition-colors">
+              Reader Messages
+            </p>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-2xl font-serif font-bold text-slate-900">{messages.length}</span>
+              {messages.some((m: any) => !m.read) && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
+                  {messages.filter((m: any) => !m.read).length} unread
+                </span>
+              )}
+            </div>
           </div>
-          <div className="p-3 rounded-xl bg-purple-50 text-purple-600">
+          <div className="p-3 rounded-xl bg-purple-50 group-hover:bg-purple-100 text-purple-600 transition-colors">
             <Mail className="w-5 h-5" />
           </div>
-        </div>
+        </Link>
       </div>
 
       {/* Writings Table */}
