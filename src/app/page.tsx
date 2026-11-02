@@ -64,6 +64,7 @@ export default function HomePage() {
                 <Link
                   key={post.id}
                   href={`/posts/${post.slug}`}
+                  prefetch={false}
                   className="group relative block bg-white rounded-2xl border border-stone-200/90 p-7 sm:p-9 shadow-sm hover:shadow-lg hover:border-blue-400 transition-all duration-200 cursor-pointer"
                 >
                   {/* Metadata Row */}
